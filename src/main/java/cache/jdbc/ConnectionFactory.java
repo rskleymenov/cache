@@ -1,6 +1,6 @@
 package cache.jdbc;
 
-import cache.exceptions.PropertiesNotFoundException;
+import cache.exceptions.CachePropertiesNotFoundException;
 import org.apache.log4j.Logger;
 
 import java.io.FileInputStream;
@@ -32,7 +32,7 @@ public final class ConnectionFactory {
             properties.load(new FileInputStream(DATABASE_PROPERTIES));
         } catch (IOException exc) {
             logger.error("Error occurred during reading default database.properties");
-            throw new PropertiesNotFoundException("database.properties is no found", exc);
+            throw new CachePropertiesNotFoundException(exc);
         }
     }
 
