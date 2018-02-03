@@ -1,9 +1,10 @@
-package cache.crud.interfaces;
+package cache.crud;
 
 import cache.annotations.parsers.ClassParser;
 import cache.annotations.parsers.FieldHelper;
 import cache.annotations.parsers.models.ClassInfo;
 import cache.annotations.parsers.models.FieldInfo;
+import cache.crud.interfaces.CRUDRepository;
 import cache.exceptions.CacheGenericRuntimeException;
 import cache.exceptions.CacheItemNotDeletedException;
 import cache.exceptions.CacheItemNotInsertedException;
@@ -14,9 +15,9 @@ import org.apache.log4j.Logger;
 
 import java.sql.*;
 
-public class CRUDRepositoryImpl implements CRUDRepository {
+public class CRUDRepo implements CRUDRepository {
 
-    private static final Logger logger = Logger.getLogger(CRUDRepository.class);
+    private static final Logger logger = Logger.getLogger(CRUDRepo.class);
 
     private ConnectionFactory connectionFactory = ConnectionFactory.getInstance();
 

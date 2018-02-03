@@ -19,6 +19,18 @@ public class UserJobInfo {
     @Column(name = "title")
     private String title;
 
+    public UserJobInfo() {
+    }
+
+    public UserJobInfo(long id, long userId, String jobName, String country, String city, String title) {
+        this.id = id;
+        this.userId = userId;
+        this.jobName = jobName;
+        this.country = country;
+        this.city = city;
+        this.title = title;
+    }
+
     public long getId() {
         return id;
     }

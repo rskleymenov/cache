@@ -1,6 +1,8 @@
 package cache;
 
-import cache.crud.interfaces.CRUDRepositoryImpl;
+import cache.crud.CRUDRepo;
+import cache.crud.CacheableCRUDRepo;
+import cache.crud.interfaces.CRUDRepository;
 import cache.models.User;
 import cache.models.UserJobInfo;
 import org.apache.log4j.Logger;
@@ -9,15 +11,20 @@ public class App {
     private static final Logger logger = Logger.getLogger(App.class);
 
     public static void main(String[] argv) {
-
-        for (int i = 0; i < 1000; i++) {
-            execute();
+        CRUDRepository crudRepository = new CacheableCRUDRepo();
+        for (int i = 1; i <= 9; i++) {
+            User user = crudRepository.getItem(i, User.class);
+            logger.info(user);
         }
 
+        for (int i = 1; i <= 9; i++) {
+            User user = crudRepository.getItem(i, User.class);
+            logger.info(user);
+        }
     }
 
-    private static void execute() {
-        CRUDRepositoryImpl crudRepository = new CRUDRepositoryImpl();
+    private static void executeNonCacheable() {
+        CRUDRepository crudRepository = new CRUDRepo();
         User item = crudRepository.getItem(1, User.class);
         logger.info(item);
 
