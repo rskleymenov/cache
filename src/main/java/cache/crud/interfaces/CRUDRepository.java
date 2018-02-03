@@ -1,6 +1,12 @@
 package cache.crud.interfaces;
 
-public interface CRUDRepository<T> {
+public interface CRUDRepository {
 
-    T getItem(long id);
+    <T> T getItem(long id, Class<T> clazz);
+
+    long saveItem(Object obj);
+
+    void removeItem(long id, Class<?> clazz);
+
+
 }

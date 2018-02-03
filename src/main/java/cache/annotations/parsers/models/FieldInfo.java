@@ -1,22 +1,38 @@
 package cache.annotations.parsers.models;
 
 public class FieldInfo {
-    private String fieldName;
+    private String sqlFieldName;
+    private String classFieldName;
     private Object fieldValue;
     private Class<?> fieldType;
 
-    public FieldInfo(String fieldName, Object fieldValue, Class<?> fieldType) {
-        this.fieldName = fieldName;
+    public FieldInfo(String sqlFieldName, String classFieldName, Object fieldValue) {
+        this.sqlFieldName = sqlFieldName;
+        this.classFieldName = classFieldName;
+        this.fieldValue = fieldValue;
+    }
+
+    public FieldInfo(String sqlFieldName, String classFieldName, Object fieldValue, Class<?> fieldType) {
+        this.sqlFieldName = sqlFieldName;
+        this.classFieldName = classFieldName;
         this.fieldValue = fieldValue;
         this.fieldType = fieldType;
     }
 
-    public String getFieldName() {
-        return fieldName;
+    public String getSqlFieldName() {
+        return sqlFieldName;
     }
 
-    public void setFieldName(String fieldName) {
-        this.fieldName = fieldName;
+    public void setSqlFieldName(String sqlFieldName) {
+        this.sqlFieldName = sqlFieldName;
+    }
+
+    public String getClassFieldName() {
+        return classFieldName;
+    }
+
+    public void setClassFieldName(String classFieldName) {
+        this.classFieldName = classFieldName;
     }
 
     public Object getFieldValue() {
@@ -38,7 +54,8 @@ public class FieldInfo {
     @Override
     public String toString() {
         return "FieldInfo{" +
-                "fieldName='" + fieldName + '\'' +
+                "sqlFieldName='" + sqlFieldName + '\'' +
+                ", classFieldName='" + classFieldName + '\'' +
                 ", fieldValue=" + fieldValue +
                 ", fieldType=" + fieldType +
                 '}';

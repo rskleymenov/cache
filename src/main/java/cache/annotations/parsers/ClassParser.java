@@ -6,18 +6,38 @@ import cache.annotations.Table;
 import cache.annotations.parsers.models.ClassInfo;
 import cache.annotations.parsers.models.FieldInfo;
 import cache.exceptions.CacheTableNameMustBeProvided;
-import cache.models.HardUser;
-import cache.models.User;
-import org.apache.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 public class ClassParser {
 
-    private static final Logger logger = Logger.getLogger(ClassParser.class);
+    public static ClassInfo getClassInfo(Class<?> clazz) {
+        ClassInfo classInfo = new ClassInfo();
+        classInfo.setFields(new ArrayList<FieldInfo>());
+        Table tableAnnotation = clazz.getAnnotation(Table.class);
+        if (tableAnnotation != null) {
+            String tableName = tableAnnotation.name();
+            classInfo.setTableName(tableName);
+        } else {
+            throw new CacheTableNameMustBeProvided();
+        }
 
-    public static ClassInfo getClassInfo(Object obj) {
+        Field[] declaredFields = clazz.getDeclaredFields();
+        for (Field field : declaredFields) {
+            Column columnAnnotation = field.getAnnotation(Column.class);
+            if (columnAnnotation != null) {
+                String sqlFieldName = columnAnnotation.name();
+                String classFieldName = field.getName();
+                Class<?> fieldType = field.getType();
+                FieldInfo fieldInfo = new FieldInfo(sqlFieldName, classFieldName, fieldType);
+                classInfo.getFields().add(fieldInfo);
+            }
+        }
+        return classInfo;
+    }
+
+    public static ClassInfo getClassInfoWithObjectValues(Object obj) {
         ClassInfo classInfo = new ClassInfo();
         classInfo.setFields(new ArrayList<FieldInfo>());
 
@@ -34,25 +54,17 @@ public class ClassParser {
             Id idAnnotation = field.getAnnotation(Id.class);
             Column columnAnnotation = field.getAnnotation(Column.class);
             if (idAnnotation != null) {
-                Long id = FieldReader.readPrivateField(field, obj);
+                Long id = FieldHelper.readPrivateField(field, obj);
                 classInfo.setId(id);
             } else if (columnAnnotation != null) {
-                String fieldName = columnAnnotation.name();
-                Object fieldValue = FieldReader.readPrivateField(field, obj);
+                String sqlFieldName = columnAnnotation.name();
+                String fieldName = field.getName();
+                Object fieldValue = FieldHelper.readPrivateField(field, obj);
                 Class<?> fieldType = field.getType();
-                FieldInfo fieldInfo = new FieldInfo(fieldName, fieldValue, fieldType);
+                FieldInfo fieldInfo = new FieldInfo(sqlFieldName, fieldName, fieldValue, fieldType);
                 classInfo.getFields().add(fieldInfo);
             }
         }
         return classInfo;
-    }
-
-
-    public static void main(String[] args) {
-        User user = new User(55, "Roman", "Kleimenov");
-        HardUser hardUser = new HardUser(12, 5, 53.0);
-        System.out.println(getClassInfo(user));
-        System.out.println(getClassInfo(hardUser));
-
     }
 }
