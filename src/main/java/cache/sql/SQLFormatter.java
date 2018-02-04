@@ -12,17 +12,13 @@ public class SQLFormatter {
     private static final String INSERT_ITEM_SQL_TEMPLATE = "insert into %s (%s) values (%s)";
     private static final String DELIMITER = ", ";
     private static final String VALUE_PATTERN = "?";
+    private static final String SELECT_ITEMS_SQL_TEMPLATE = "select %s from %s ";
+    private static final String ID_IDENTIFIER = "id";
 
     public static String formatGetItemSQL(ClassInfo classInfo) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("id");
-        for (FieldInfo fieldInfo : classInfo.getFields()) {
-            String fieldName = fieldInfo.getSqlFieldName();
-            sb.append(DELIMITER);
-            sb.append(fieldName);
-        }
+        String sqlFields = getSQLSelectFields(classInfo);
         String tableName = classInfo.getTableName();
-        return String.format(GET_ITEM_SQL_TEMPLATE, sb, tableName);
+        return String.format(GET_ITEM_SQL_TEMPLATE, sqlFields, tableName);
     }
 
     public static String formatInsertItemSQL(ClassInfo classInfo) {
@@ -44,6 +40,22 @@ public class SQLFormatter {
 
     public static String formatDeleteItemSQL(ClassInfo classInfo) {
         return String.format(DELETE_ITEM_SQL_TEMPLATE, classInfo.getTableName());
+    }
+
+    public static String formatSelectQuerySQL(ClassInfo classInfo, String appender) {
+        String sqlFields = getSQLSelectFields(classInfo);
+        return String.format(SELECT_ITEMS_SQL_TEMPLATE, sqlFields, classInfo.getTableName()).concat(appender);
+    }
+
+    private static String getSQLSelectFields(ClassInfo classInfo) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ID_IDENTIFIER);
+        for (FieldInfo fieldInfo : classInfo.getFields()) {
+            String fieldName = fieldInfo.getSqlFieldName();
+            sb.append(DELIMITER);
+            sb.append(fieldName);
+        }
+        return sb.toString();
     }
 
 }

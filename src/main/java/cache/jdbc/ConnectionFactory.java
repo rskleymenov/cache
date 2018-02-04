@@ -15,6 +15,7 @@ public final class ConnectionFactory {
     private static volatile ConnectionFactory instance = null;
 
     private ConnectionFactory() {
+        // suppress incorrect creation
     }
 
     private static final Logger logger = Logger.getLogger(ConnectionFactory.class);
@@ -37,11 +38,13 @@ public final class ConnectionFactory {
     }
 
     public static synchronized ConnectionFactory getInstance() {
-        if (instance == null)
+        if (instance == null) {
             synchronized (ConnectionFactory.class) {
-                if (instance == null)
+                if (instance == null) {
                     instance = new ConnectionFactory();
+                }
             }
+        }
         return instance;
     }
 

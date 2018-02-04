@@ -14,10 +14,13 @@ import cache.sql.SQLFormatter;
 import org.apache.log4j.Logger;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CRUDRepo implements CRUDRepository {
 
     private static final Logger logger = Logger.getLogger(CRUDRepo.class);
+    private static final String ID_IDENTIFICATOR = "id";
 
     private ConnectionFactory connectionFactory = ConnectionFactory.getInstance();
 
@@ -104,6 +107,42 @@ public class CRUDRepo implements CRUDRepository {
         }
     }
 
+    public <T> List<T> selectQueryItems(String statement, Object[] args, Class<T> clazz) {
+        return selectQueryItemsTuple(statement, args, clazz).getResult();
+    }
+
+    protected <T> Tuple<T> selectQueryItemsTuple(String statement, Object[] args, Class<T> clazz) {
+        List<T> resultList = new ArrayList<T>();
+        ClassInfo classInfo = ClassParser.getClassInfo(clazz);
+        String sql = SQLFormatter.formatSelectQuerySQL(classInfo, statement);
+        Connection connection = connectionFactory.getConnection();
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            int indx = 0;
+            for (Object obj : args) {
+                preparedStatement.setObject(++indx, obj);
+            }
+            logger.info(preparedStatement);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                ClassInfo curClassInfo = new ClassInfo(classInfo);
+                for (FieldInfo curFieldInfo : curClassInfo.getFields()) {
+                    curClassInfo.setId(resultSet.getLong(ID_IDENTIFICATOR));
+                    Object fieldValue = resultSet.getObject(curFieldInfo.getSqlFieldName());
+                    curFieldInfo.setFieldValue(fieldValue);
+                }
+                T foundEntity = createInstance(curClassInfo, clazz);
+                resultList.add(foundEntity);
+            }
+            return new Tuple<T>(resultList, preparedStatement.toString());
+        } catch (SQLException exc) {
+            logger.error(exc);
+            throw new CacheSQLException(exc);
+        } finally {
+            closeConnection(connection);
+        }
+    }
+
     private void closeConnection(Connection connection) {
         try {
             connection.close();
@@ -116,7 +155,7 @@ public class CRUDRepo implements CRUDRepository {
     private <T> T createInstance(ClassInfo classInfo, Class<T> clazz) {
         try {
             T createdInstance = clazz.newInstance();
-            FieldHelper.writePrivateField("id", classInfo.getId(), createdInstance);
+            FieldHelper.writePrivateField(ID_IDENTIFICATOR, classInfo.getId(), createdInstance);
             for (FieldInfo fieldInfo : classInfo.getFields()) {
                 FieldHelper.writePrivateField(fieldInfo.getClassFieldName(), fieldInfo.getFieldValue(), createdInstance);
             }
@@ -124,6 +163,25 @@ public class CRUDRepo implements CRUDRepository {
         } catch (Exception exc) {
             throw new CacheGenericRuntimeException(exc);
         }
+    }
+
+    protected class Tuple<T> {
+        private List<T> result;
+        private String sql;
+
+        public Tuple(List<T> result, String sql) {
+            this.result = result;
+            this.sql = sql;
+        }
+
+        public String getSql() {
+            return sql;
+        }
+
+        public List<T> getResult() {
+            return result;
+        }
+
     }
 
 }

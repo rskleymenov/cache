@@ -9,12 +9,18 @@ public class Cache {
 
     private static volatile Cache instance = null;
 
+    private Cache() {
+        // suppress incorrect creation
+    }
+
     public static synchronized Cache getInstance() {
-        if (instance == null)
+        if (instance == null) {
             synchronized (Cache.class) {
-                if (instance == null)
+                if (instance == null) {
                     instance = new Cache();
+                }
             }
+        }
         return instance;
     }
 

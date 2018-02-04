@@ -7,10 +7,18 @@ import cache.models.User;
 import cache.models.UserJobInfo;
 import org.apache.log4j.Logger;
 
+import java.util.List;
+
 public class App {
     private static final Logger logger = Logger.getLogger(App.class);
 
     public static void main(String[] argv) {
+        CRUDRepo crudRepository = new CRUDRepo();
+        List<User> users = crudRepository.selectQueryItems("where id in (?, ?, ?)", new Object[]{3, 4, 1}, User.class);
+        System.out.println(users);
+    }
+
+    private static void testCache() {
         CRUDRepository crudRepository = new CacheableCRUDRepo();
         for (int i = 1; i <= 9; i++) {
             User user = crudRepository.getItem(i, User.class);
