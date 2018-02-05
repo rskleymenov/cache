@@ -1,11 +1,19 @@
 package cache.instance;
 
+import cache.annotations.parsers.ClassParser;
+import cache.annotations.parsers.models.ClassInfo;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Cache {
 
     private static final Map<Key, Object> cache = new ConcurrentHashMap<Key, Object>();
+
+    private static final Map<String, List<Key>> queryCache = new ConcurrentHashMap<String, List<Key>>();
 
     private static volatile Cache instance = null;
 
@@ -24,6 +32,39 @@ public class Cache {
         return instance;
     }
 
+    public <T> void putQuery(String query, List<T> resultItems) {
+        Map<Cache.Key, T> queryResult = new HashMap<Key, T>();
+        for (T item : resultItems) {
+            ClassInfo classInfo = ClassParser.getClassInfoWithObjectValues(item);
+            Key key = new Key(classInfo.getId(), item.getClass());
+            queryResult.put(key, item);
+        }
+        putQuery(query, queryResult);
+    }
+
+    public <T> void putQuery(String query, Map<Key, T> queryResult) {
+        List<Key> queryIdentifiers = new ArrayList<Key>();
+        for (Map.Entry<Key, T> entry : queryResult.entrySet()) {
+            Key key = entry.getKey();
+            Object value = entry.getValue();
+            queryIdentifiers.add(key);
+            cache.put(key, value);
+        }
+        queryCache.put(query, queryIdentifiers);
+    }
+
+    public <T> List<T> getQuery(String query) {
+        List<T> cachedObjects = new ArrayList<T>();
+        List<Key> keys = queryCache.get(query);
+        if (keys != null) {
+            for (Key key : keys) {
+                T cachedObj = get(key);
+                cachedObjects.add(cachedObj);
+            }
+        }
+        return cachedObjects;
+    }
+
     public void put(Object identifier, Object value) {
         Key key = new Key(identifier, value.getClass());
         put(key, value);
@@ -39,8 +80,7 @@ public class Cache {
     }
 
     public <T> T get(Key key) {
-        Object cachedValue = cache.get(key);
-        return (T) cachedValue;
+        return (T) cache.get(key);
     }
 
     public class Key {

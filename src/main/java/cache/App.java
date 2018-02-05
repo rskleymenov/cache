@@ -13,9 +13,13 @@ public class App {
     private static final Logger logger = Logger.getLogger(App.class);
 
     public static void main(String[] argv) {
-        CRUDRepo crudRepository = new CRUDRepo();
-        List<User> users = crudRepository.selectQueryItems("where id in (?, ?, ?)", new Object[]{3, 4, 1}, User.class);
+        CRUDRepo crudRepository = new CacheableCRUDRepo();
+        List<User> users = crudRepository.selectQueryItems("where id in (?, ?, ?, ?)", new Object[]{1, 2, 3, 4}, User.class);
         System.out.println(users);
+        User user = crudRepository.getItem(2, User.class);
+        System.out.println(user);
+        user = crudRepository.getItem(6, User.class);
+        System.out.println(user);
     }
 
     private static void testCache() {

@@ -14,6 +14,7 @@ public class SQLFormatter {
     private static final String VALUE_PATTERN = "?";
     private static final String SELECT_ITEMS_SQL_TEMPLATE = "select %s from %s ";
     private static final String ID_IDENTIFIER = "id";
+    private static final String QUOTE_REGEX = "\\?";
 
     public static String formatGetItemSQL(ClassInfo classInfo) {
         String sqlFields = getSQLSelectFields(classInfo);
@@ -45,6 +46,13 @@ public class SQLFormatter {
     public static String formatSelectQuerySQL(ClassInfo classInfo, String appender) {
         String sqlFields = getSQLSelectFields(classInfo);
         return String.format(SELECT_ITEMS_SQL_TEMPLATE, sqlFields, classInfo.getTableName()).concat(appender);
+    }
+
+    public static String formatCacheQuery(String query, Object[] args) {
+        for (Object argument : args) {
+            query = query.replaceFirst(QUOTE_REGEX, argument.toString());
+        }
+        return query;
     }
 
     private static String getSQLSelectFields(ClassInfo classInfo) {

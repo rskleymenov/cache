@@ -107,14 +107,10 @@ public class CRUDRepo implements CRUDRepository {
         }
     }
 
-    public <T> List<T> selectQueryItems(String statement, Object[] args, Class<T> clazz) {
-        return selectQueryItemsTuple(statement, args, clazz).getResult();
-    }
-
-    protected <T> Tuple<T> selectQueryItemsTuple(String statement, Object[] args, Class<T> clazz) {
+    public  <T> List<T> selectQueryItems(String query, Object[] args, Class<T> clazz) {
         List<T> resultList = new ArrayList<T>();
         ClassInfo classInfo = ClassParser.getClassInfo(clazz);
-        String sql = SQLFormatter.formatSelectQuerySQL(classInfo, statement);
+        String sql = SQLFormatter.formatSelectQuerySQL(classInfo, query);
         Connection connection = connectionFactory.getConnection();
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -134,7 +130,7 @@ public class CRUDRepo implements CRUDRepository {
                 T foundEntity = createInstance(curClassInfo, clazz);
                 resultList.add(foundEntity);
             }
-            return new Tuple<T>(resultList, preparedStatement.toString());
+            return resultList;
         } catch (SQLException exc) {
             logger.error(exc);
             throw new CacheSQLException(exc);
@@ -163,25 +159,6 @@ public class CRUDRepo implements CRUDRepository {
         } catch (Exception exc) {
             throw new CacheGenericRuntimeException(exc);
         }
-    }
-
-    protected class Tuple<T> {
-        private List<T> result;
-        private String sql;
-
-        public Tuple(List<T> result, String sql) {
-            this.result = result;
-            this.sql = sql;
-        }
-
-        public String getSql() {
-            return sql;
-        }
-
-        public List<T> getResult() {
-            return result;
-        }
-
     }
 
 }
