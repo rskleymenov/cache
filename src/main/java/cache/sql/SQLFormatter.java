@@ -48,11 +48,11 @@ public class SQLFormatter {
         return String.format(SELECT_ITEMS_SQL_TEMPLATE, sqlFields, classInfo.getTableName()).concat(appender);
     }
 
-    public static String formatCacheQuery(String query, Object[] args) {
+    public static String formatCacheQuery(String query, Object[] args, ClassInfo classInfo) {
         for (Object argument : args) {
             query = query.replaceFirst(QUOTE_REGEX, argument.toString());
         }
-        return query;
+        return formatSelectQuerySQL(classInfo, query);
     }
 
     private static String getSQLSelectFields(ClassInfo classInfo) {

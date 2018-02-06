@@ -16,10 +16,13 @@ public class App {
         CRUDRepo crudRepository = new CacheableCRUDRepo();
         List<User> users = crudRepository.selectQueryItems("where id in (?, ?, ?, ?)", new Object[]{1, 2, 3, 4}, User.class);
         System.out.println(users);
-        User user = crudRepository.getItem(2, User.class);
-        System.out.println(user);
-        user = crudRepository.getItem(6, User.class);
-        System.out.println(user);
+        User user6 = crudRepository.getItem(6, User.class);
+        User user7 = crudRepository.getItem(7, User.class);
+        System.out.println(user6);
+        System.out.println(user7);
+        crudRepository.removeItem(7, User.class);
+        crudRepository.getItem(6, User.class);
+        crudRepository.selectQueryItems("where id in (?, ?, ?, ?)", new Object[]{1, 2, 3, 4}, User.class);
     }
 
     private static void testCache() {

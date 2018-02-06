@@ -2,6 +2,7 @@ package cache.instance;
 
 import cache.annotations.parsers.ClassParser;
 import cache.annotations.parsers.models.ClassInfo;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,6 +11,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Cache {
+
+    private static final Logger logger = Logger.getLogger(Cache.class);
 
     private static final Map<Key, Object> cache = new ConcurrentHashMap<Key, Object>();
 
@@ -26,17 +29,39 @@ public class Cache {
             synchronized (Cache.class) {
                 if (instance == null) {
                     instance = new Cache();
+                    logger.info("Cache instance created!");
                 }
             }
         }
         return instance;
     }
 
+    public void invalidateCache() {
+        cache.clear();
+        queryCache.clear();
+        logger.info("Cache totally invalidated");
+        logger.info("Cache size is: " + cache.size());
+        logger.info("Query cache size is: " + queryCache.size());
+    }
+
+    public void invalidateQueryCache() {
+        logger.info("Invalidating query cache...");
+        for (List<Key> keys : queryCache.values()) {
+            for (Key key : keys) {
+                cache.remove(key);
+                logger.info("Invalidated item is " + key.getId() + " class: " + key.getClazz());
+            }
+        }
+        queryCache.clear();
+        logger.info("Invalidating query cache is done!");
+        logger.info("Query cache size is: " + queryCache.size());
+    }
+
     public <T> void putQuery(String query, List<T> resultItems) {
         Map<Cache.Key, T> queryResult = new HashMap<Key, T>();
         for (T item : resultItems) {
             ClassInfo classInfo = ClassParser.getClassInfoWithObjectValues(item);
-            Key key = new Key(classInfo.getId(), item.getClass());
+            Key<T> key = new Key(classInfo.getId(), item.getClass());
             queryResult.put(key, item);
         }
         putQuery(query, queryResult);
@@ -53,16 +78,21 @@ public class Cache {
         queryCache.put(query, queryIdentifiers);
     }
 
-    public <T> List<T> getQuery(String query) {
+    public <T> Tuple<T> getQuery(String query) {
         List<T> cachedObjects = new ArrayList<T>();
+        List<Key<T>> invalidatedKeys = new ArrayList<Key<T>>();
         List<Key> keys = queryCache.get(query);
         if (keys != null) {
             for (Key key : keys) {
                 T cachedObj = get(key);
-                cachedObjects.add(cachedObj);
+                if (cachedObj == null) {
+                    invalidatedKeys.add(key);
+                } else {
+                    cachedObjects.add(cachedObj);
+                }
             }
         }
-        return cachedObjects;
+        return new Tuple<T>(cachedObjects, invalidatedKeys);
     }
 
     public void put(Object identifier, Object value) {
@@ -83,14 +113,29 @@ public class Cache {
         return (T) cache.get(key);
     }
 
-    public class Key {
-        private Object id;
-        private Class<?> clazz;
+    public <T> void remove(Object identifier, Class<T> clazz) {
+        Key<T> key = new Key<T>(identifier, clazz);
+        cache.remove(key);
+    }
 
-        public Key(Object id, Class<?> clazz) {
+    public class Key<T> {
+        private Object id;
+        private Class<? extends T> clazz;
+
+        public Key(Object id, Class<? extends T> clazz) {
             this.id = id;
             this.clazz = clazz;
         }
+
+        public Object getId() {
+            return id;
+        }
+
+
+        public Class<? extends T> getClazz() {
+            return clazz;
+        }
+
 
         @Override
         public boolean equals(Object o) {
@@ -110,5 +155,24 @@ public class Cache {
             return result;
         }
     }
+
+    public class Tuple<T> {
+        private List<T> cachedObjects;
+        private List<Key<T>> invalidatedKeys;
+
+        public Tuple(List<T> cachedObjects, List<Key<T>> invalidatedKeys) {
+            this.cachedObjects = cachedObjects;
+            this.invalidatedKeys = invalidatedKeys;
+        }
+
+        public List<T> getCachedObjects() {
+            return cachedObjects;
+        }
+
+        public List<Key<T>> getInvalidatedKeys() {
+            return invalidatedKeys;
+        }
+    }
+
 
 }
