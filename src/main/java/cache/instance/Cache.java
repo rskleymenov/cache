@@ -4,21 +4,19 @@ import cache.annotations.parsers.ClassParser;
 import cache.annotations.parsers.models.ClassInfo;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Cache {
+//TODO add cache size LRU invalidation
+public final class Cache {
 
     private static final Logger logger = Logger.getLogger(Cache.class);
 
-    private static final Map<Key, Object> cache = new ConcurrentHashMap<Key, Object>();
-
-    private static final Map<String, List<Key>> queryCache = new ConcurrentHashMap<String, List<Key>>();
-
     private static volatile Cache instance = null;
+    private static final CacheManager cacheManager = CacheManager.getInstance();
+
+    private static final Map<Key, Object> storage = new ConcurrentHashMap<Key, Object>();
+    private static final Map<String, List<Key>> queryStorage = new ConcurrentHashMap<String, List<Key>>();
 
     private Cache() {
         // suppress incorrect creation
@@ -36,25 +34,29 @@ public class Cache {
         return instance;
     }
 
+    protected Map<Key, Object> getStorage() {
+        return storage;
+    }
+
     public void invalidateCache() {
-        cache.clear();
-        queryCache.clear();
+        storage.clear();
+        queryStorage.clear();
         logger.info("Cache totally invalidated");
-        logger.info("Cache size is: " + cache.size());
-        logger.info("Query cache size is: " + queryCache.size());
+        logger.info("Cache size is: " + storage.size());
+        logger.info("Query cache size is: " + queryStorage.size());
     }
 
     public void invalidateQueryCache() {
         logger.info("Invalidating query cache...");
-        for (List<Key> keys : queryCache.values()) {
+        for (List<Key> keys : queryStorage.values()) {
             for (Key key : keys) {
-                cache.remove(key);
+                storage.remove(key);
                 logger.info("Invalidated item is " + key.getId() + " class: " + key.getClazz());
             }
         }
-        queryCache.clear();
+        queryStorage.clear();
         logger.info("Invalidating query cache is done!");
-        logger.info("Query cache size is: " + queryCache.size());
+        logger.info("Query cache size is: " + queryStorage.size());
     }
 
     public <T> void putQuery(String query, List<T> resultItems) {
@@ -73,15 +75,15 @@ public class Cache {
             Key key = entry.getKey();
             Object value = entry.getValue();
             queryIdentifiers.add(key);
-            cache.put(key, value);
+            storage.put(key, value);
         }
-        queryCache.put(query, queryIdentifiers);
+        queryStorage.put(query, queryIdentifiers);
     }
 
     public <T> Tuple<T> getQuery(String query) {
         List<T> cachedObjects = new ArrayList<T>();
         List<Key<T>> invalidatedKeys = new ArrayList<Key<T>>();
-        List<Key> keys = queryCache.get(query);
+        List<Key> keys = queryStorage.get(query);
         if (keys != null) {
             for (Key key : keys) {
                 T cachedObj = get(key);
@@ -106,21 +108,22 @@ public class Cache {
     }
 
     public void put(Key key, Object value) {
-        cache.put(key, value);
+        storage.put(key, value);
     }
 
     public <T> T get(Key key) {
-        return (T) cache.get(key);
+        return (T) storage.get(key);
     }
 
     public <T> void remove(Object identifier, Class<T> clazz) {
         Key<T> key = new Key<T>(identifier, clazz);
-        cache.remove(key);
+        storage.remove(key);
     }
 
     public class Key<T> {
         private Object id;
         private Class<? extends T> clazz;
+        private Date creationDate = new Date();
 
         public Key(Object id, Class<? extends T> clazz) {
             this.id = id;
@@ -131,11 +134,13 @@ public class Cache {
             return id;
         }
 
-
         public Class<? extends T> getClazz() {
             return clazz;
         }
 
+        public Date getCreationDate() {
+            return creationDate;
+        }
 
         @Override
         public boolean equals(Object o) {
