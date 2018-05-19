@@ -2,13 +2,15 @@ package cache.instance;
 
 import cache.annotations.parsers.ClassParser;
 import cache.annotations.parsers.models.ClassInfo;
+import cache.tree.RadixTree;
 import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-//TODO add cache size LRU invalidation
 public final class Cache {
+
+    private static final String QUERY_STORAGE_NAME = "java.util.Map";
 
     private static final Logger logger = Logger.getLogger(Cache.class);
 
@@ -16,7 +18,15 @@ public final class Cache {
     private static final CacheManager cacheManager = CacheManager.getInstance();
 
     private static final Map<Key, Object> storage = new ConcurrentHashMap<Key, Object>();
-    private static final Map<String, List<Key>> queryStorage = new ConcurrentHashMap<String, List<Key>>();
+    private static final Map<String, List<Key>> queryStorage;
+
+    static {
+        if (QUERY_STORAGE_NAME.equals("java.util.Map")) {
+            queryStorage = new ConcurrentHashMap<>();
+        } else {
+            queryStorage = new RadixTree<>();
+        }
+    }
 
     private Cache() {
         // suppress incorrect creation

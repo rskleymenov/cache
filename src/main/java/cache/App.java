@@ -20,7 +20,7 @@ public class App {
         User user7 = crudRepository.getItem(7, User.class);
         System.out.println(user6);
         System.out.println(user7);
-        crudRepository.removeItem(7, User.class);
+        crudRepository.removeItem(6, User.class);
         crudRepository.getItem(6, User.class);
         crudRepository.selectQueryItems("where id in (?, ?, ?, ?)", new Object[]{1, 2, 3, 4}, User.class);
     }

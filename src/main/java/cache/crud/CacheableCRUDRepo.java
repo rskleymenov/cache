@@ -33,10 +33,10 @@ public class CacheableCRUDRepo extends CRUDRepo {
     }
 
     public <T> List<T> selectQueryItems(String query, Object[] args, Class<T> clazz) {
-        ClassInfo classInfo = ClassParser.getClassInfo(clazz);
-        String filledCacheQuery = SQLFormatter.formatCacheQuery(query, args, classInfo);
-        logger.info("Cache query is: " + filledCacheQuery);
         if (isQueryCacheEnabled) {
+            ClassInfo classInfo = ClassParser.getClassInfo(clazz);
+            String filledCacheQuery = SQLFormatter.formatCacheQuery(query, args, classInfo);
+            logger.info("Cache query is: " + filledCacheQuery);
             Cache.Tuple<T> tuple = cache.getQuery(filledCacheQuery);
             List<T> cachedItems = tuple.getCachedObjects();
             List<Cache.Key<T>> invalidatedKeys = tuple.getInvalidatedKeys();
